@@ -23,6 +23,7 @@
   },
   "homepage": "https://github.com/SKOLZ/premier-pal#readme",
   "dependencies": {
+    "@upstash/qstash": "^2.8.1",
     "discord.js": "^14.19.3",
     "dotenv": "^16.5.0"
   },

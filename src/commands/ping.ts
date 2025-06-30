@@ -6,6 +6,7 @@ export default {
     .setName('ping')
     .setDescription('Replies with Pong and latency information!'),
   execute: async (interaction: ChatInputCommandInteraction<CacheType>) => {
+    console.log('holis');
     const sent = await interaction.reply({
       content: 'Pinging...',
       withResponse: true,

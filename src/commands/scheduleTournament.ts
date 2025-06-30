@@ -1,5 +1,14 @@
 import type { CacheType, ChatInputCommandInteraction } from 'discord.js';
-import { SlashCommandBuilder } from 'discord.js';
+import {
+  ActionRowBuilder,
+  ComponentType,
+  SlashCommandBuilder,
+  StringSelectMenuBuilder,
+  StringSelectMenuOptionBuilder,
+} from 'discord.js';
+import { Client } from '@upstash/qstash';
+
+const client = new Client();
 
 const maps = [
   { name: 'Ascent', value: 'ascent' },
@@ -50,71 +59,110 @@ export default {
         .setName('tournament_start_date')
         .setDescription("The tournament's start date in DD/MM/YYYY format")
         .setRequired(true),
-    )
-    .addStringOption((option) =>
-      option
-        .setName('map_week_1')
-        .setDescription('Available maps for this season in week order')
-        .setRequired(true)
-        .addChoices(maps),
-    )
-    .addStringOption((option) =>
-      option
-        .setName('map_week_2')
-        .setDescription('Available maps for this season in week order')
-        .setRequired(true)
-        .addChoices(maps),
-    )
-    .addStringOption((option) =>
-      option
-        .setName('map_week_3')
-        .setDescription('Available maps for this season in week order')
-        .setRequired(true)
-        .addChoices(maps),
-    )
-    .addStringOption((option) =>
-      option
-        .setName('map_week_4')
-        .setDescription('Available maps for this season in week order')
-        .setRequired(true)
-        .addChoices(maps),
-    )
-    .addStringOption((option) =>
-      option
-        .setName('map_week_5')
-        .setDescription('Available maps for this season in week order')
-        .setRequired(true)
-        .addChoices(maps),
-    )
-    .addStringOption((option) =>
-      option
-        .setName('map_week_6')
-        .setDescription('Available maps for this season in week order')
-        .setRequired(true)
-        .addChoices(maps),
-    )
-    .addStringOption((option) =>
-      option
-        .setName('map_week_7')
-        .setDescription('Available maps for this season in week order')
-        .setRequired(true)
-        .addChoices(maps),
     ),
+  // .addStringOption((option) =>
+  //   option
+  //     .setName('map_week_1')
+  //     .setDescription('Available maps for this season in week order')
+  //     .setRequired(true)
+  //     .addChoices(maps),
+  // )
+  // .addStringOption((option) =>
+  //   option
+  //     .setName('map_week_2')
+  //     .setDescription('Available maps for this season in week order')
+  //     .setRequired(true)
+  //     .addChoices(maps),
+  // )
+  // .addStringOption((option) =>
+  //   option
+  //     .setName('map_week_3')
+  //     .setDescription('Available maps for this season in week order')
+  //     .setRequired(true)
+  //     .addChoices(maps),
+  // )
+  // .addStringOption((option) =>
+  //   option
+  //     .setName('map_week_4')
+  //     .setDescription('Available maps for this season in week order')
+  //     .setRequired(true)
+  //     .addChoices(maps),
+  // )
+  // .addStringOption((option) =>
+  //   option
+  //     .setName('map_week_5')
+  //     .setDescription('Available maps for this season in week order')
+  //     .setRequired(true)
+  //     .addChoices(maps),
+  // )
+  // .addStringOption((option) =>
+  //   option
+  //     .setName('map_week_6')
+  //     .setDescription('Available maps for this season in week order')
+  //     .setRequired(true)
+  //     .addChoices(maps),
+  // )
+  // .addStringOption((option) =>
+  //   option
+  //     .setName('map_week_7')
+  //     .setDescription('Available maps for this season in week order')
+  //     .setRequired(true)
+  //     .addChoices(maps),
+  // ),
 
   execute: async (interaction: ChatInputCommandInteraction<CacheType>) => {
     const dateResponse = interaction.options.getString('tournament_start_date');
-    const maps = [];
-    for (let i = 1; i <= 7; i++) {
-      const mapOption = interaction.options.getString(`map_week_${i}`);
-      if (mapOption) {
-        maps.push(mapOption);
-      }
-    }
+    // const maps = [];
+    // for (let i = 1; i <= 7; i++) {
+    //   const mapOption = interaction.options.getString(`map_week_${i}`);
+    //   if (mapOption) {
+    //     maps.push(mapOption);
+    //   }
+    // }
 
     if (dateResponse && isValidDate(dateResponse)) {
-      await interaction.reply({
-        content: `Holis el torneo empieza el ${dateResponse} y los mapas son: ${maps.map((map) => map.toLocaleUpperCase()).join(', ')}`,
+      // await client.schedules.create({
+      //   destination: "https://example.com",
+      //   cron: "0 0 * * *",
+      // })
+      // await interaction.reply({
+      //   content: `Holis el torneo empieza el ${dateResponse} y los mapas son: ${maps.map((map) => map.toLocaleUpperCase()).join(', ')}`,
+      //   withResponse: true,
+      // });
+
+      const select = new StringSelectMenuBuilder()
+        .setCustomId('map_selection')
+        .setPlaceholder('Select 6-7 maps for the tournament!')
+        .setMinValues(2)
+        .setMaxValues(7)
+        .addOptions(
+          maps.map((map) =>
+            new StringSelectMenuOptionBuilder()
+              .setLabel(map.name)
+              .setDescription(`Select ${map.name} for the tournament`)
+              .setValue(map.value),
+          ),
+        );
+
+      const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+        select,
+      );
+
+      const response = await interaction.reply({
+        content: 'Choose 6-7 maps for the tournament schedule!',
+        components: [row],
         withResponse: true,
+      });
+
+      const collector =
+        response.resource?.message?.createMessageComponentCollector({
+          componentType: ComponentType.StringSelect,
+          time: 3_600_000,
+        });
+
+      collector?.on('collect', async (i) => {
+        const selectedMaps = i.values;
+        await i.reply(`${i.user} has selected: ${selectedMaps.join(', ')}!`);
       });
     } else {
       await interaction.reply({

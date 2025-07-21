@@ -21,17 +21,15 @@ Discord Bot that helps you organize your matches on Valorant's premier tournamen
    ```
 
    Required variables:
-   - `DISCORD_TOKEN`: Your Discord bot token
+   - `BOT_TOKEN`: Your Discord bot token
+   - `CLIENT_ID`: Your Discord application client ID
    - `QSTASH_TOKEN`: Your Upstash QStash token
    - `WEBHOOK_URL`: URL where your server is hosted (for QStash webhooks)
 
-3. **Start the bot**:
+3. **Start the application**:
    ```bash
-   # Start the Discord bot
+   # Starts both the Discord bot and webhook server
    pnpm dev
-   
-   # Start the webhook server (in another terminal)
-   pnpm server
    ```
 
 ## Usage

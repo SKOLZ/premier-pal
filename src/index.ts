@@ -17,6 +17,7 @@ import {
   type CacheType,
   type SlashCommandBuilder,
 } from 'discord.js';
+import { startServer } from './server.js';
 
 const deployCommands = async () => {
   try {
@@ -112,6 +113,9 @@ client.once(Events.ClientReady, async () => {
       },
     ],
   });
+
+  // Start the webhook server
+  startServer(client);
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {

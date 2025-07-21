@@ -60,115 +60,77 @@ export default {
         .setDescription("The tournament's start date in DD/MM/YYYY format")
         .setRequired(true),
     ),
-  // .addStringOption((option) =>
-  //   option
-  //     .setName('map_week_1')
-  //     .setDescription('Available maps for this season in week order')
-  //     .setRequired(true)
-  //     .addChoices(maps),
-  // )
-  // .addStringOption((option) =>
-  //   option
-  //     .setName('map_week_2')
-  //     .setDescription('Available maps for this season in week order')
-  //     .setRequired(true)
-  //     .addChoices(maps),
-  // )
-  // .addStringOption((option) =>
-  //   option
-  //     .setName('map_week_3')
-  //     .setDescription('Available maps for this season in week order')
-  //     .setRequired(true)
-  //     .addChoices(maps),
-  // )
-  // .addStringOption((option) =>
-  //   option
-  //     .setName('map_week_4')
-  //     .setDescription('Available maps for this season in week order')
-  //     .setRequired(true)
-  //     .addChoices(maps),
-  // )
-  // .addStringOption((option) =>
-  //   option
-  //     .setName('map_week_5')
-  //     .setDescription('Available maps for this season in week order')
-  //     .setRequired(true)
-  //     .addChoices(maps),
-  // )
-  // .addStringOption((option) =>
-  //   option
-  //     .setName('map_week_6')
-  //     .setDescription('Available maps for this season in week order')
-  //     .setRequired(true)
-  //     .addChoices(maps),
-  // )
-  // .addStringOption((option) =>
-  //   option
-  //     .setName('map_week_7')
-  //     .setDescription('Available maps for this season in week order')
-  //     .setRequired(true)
-  //     .addChoices(maps),
-  // ),
-
   execute: async (interaction: ChatInputCommandInteraction<CacheType>) => {
     const dateResponse = interaction.options.getString('tournament_start_date');
-    // const maps = [];
-    // for (let i = 1; i <= 7; i++) {
-    //   const mapOption = interaction.options.getString(`map_week_${i}`);
-    //   if (mapOption) {
-    //     maps.push(mapOption);
-    //   }
-    // }
 
-    if (dateResponse && isValidDate(dateResponse)) {
-      // await client.schedules.create({
-      //   destination: "https://example.com",
-      //   cron: "0 0 * * *",
-      // })
-      // await interaction.reply({
-      //   content: `Holis el torneo empieza el ${dateResponse} y los mapas son: ${maps.map((map) => map.toLocaleUpperCase()).join(', ')}`,
-      //   withResponse: true,
-      // });
-
-      const select = new StringSelectMenuBuilder()
-        .setCustomId('map_selection')
-        .setPlaceholder('Select 6-7 maps for the tournament!')
-        .setMinValues(2)
-        .setMaxValues(7)
-        .addOptions(
-          maps.map((map) =>
-            new StringSelectMenuOptionBuilder()
-              .setLabel(map.name)
-              .setDescription(`Select ${map.name} for the tournament`)
-              .setValue(map.value),
-          ),
-        );
-
-      const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
-        select,
-      );
-
-      const response = await interaction.reply({
-        content: 'Choose 6-7 maps for the tournament schedule!',
-        components: [row],
-        withResponse: true,
-      });
-
-      const collector =
-        response.resource?.message?.createMessageComponentCollector({
-          componentType: ComponentType.StringSelect,
-          time: 3_600_000,
-        });
-
-      collector?.on('collect', async (i) => {
-        const selectedMaps = i.values;
-        await i.reply(`${i.user} has selected: ${selectedMaps.join(', ')}!`);
-      });
-    } else {
-      await interaction.reply({
-        content: 'Nolis',
+    if (!dateResponse || !isValidDate(dateResponse)) {
+      return interaction.reply({
+        content: 'Please provide a valid date in DD/MM/YYYY format.',
         withResponse: true,
       });
     }
+    const select = new StringSelectMenuBuilder()
+      .setCustomId('map_selection')
+      .setPlaceholder(
+        'Select the 7 maps that will be played in the tournament in calendar order.',
+      )
+      .setMinValues(7)
+      .setMaxValues(7)
+      .addOptions(
+        maps.map((map) =>
+          new StringSelectMenuOptionBuilder()
+            .setLabel(map.name)
+            .setDescription(`Select ${map.name} for the tournament`)
+            .setValue(map.value),
+        ),
+      );
+
+    const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+      select,
+    );
+
+    const response = await interaction.reply({
+      content:
+        'Select the 7 maps that will be played in the tournament in calendar order.',
+      components: [row],
+      withResponse: true,
+    });
+
+    const collector =
+      response.resource?.message?.createMessageComponentCollector({
+        componentType: ComponentType.StringSelect,
+        time: 300_000,
+      });
+
+    collector?.on('collect', async (i) => {
+      const selectedMaps = i.values;
+
+      if (selectedMaps.length !== 7) {
+        await i.reply({
+          content: `❌ Error: You must select exactly 7 maps for the tournament. You selected ${selectedMaps.length} map(s). Please try again.`,
+          ephemeral: true,
+        });
+        return;
+      }
+
+      // await client.schedules.create({
+      //   destination: 'https://example.com',
+      //   cron: '0 0 * * *',
+      // });
+      await i.reply({
+        content: `The Tournament has been successfully scheduled.\nStart date: ${dateResponse}\nMaps to be played: ${selectedMaps.map((map) => map.toLocaleUpperCase()).join(', ')}.\nYou'll recieve a message each Monday to schedule the matches.\nGood luck this season!`,
+        withResponse: true,
+      });
+    });
+
+    collector?.on('end', (collected) => {
+      if (collected.size === 0) {
+        interaction.followUp({
+          content:
+            '❌ Error: No maps were selected within the time limit (5 minutes). Please run the command again.',
+          ephemeral: true,
+        });
+      }
+    });
   },
 };

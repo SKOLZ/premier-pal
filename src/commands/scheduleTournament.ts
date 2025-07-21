@@ -136,13 +136,10 @@ export default {
         // Format date for display
         const scheduledDate = weekDate.toLocaleDateString('en-GB');
 
-        // Calculate delay in seconds from now
-        const now = new Date();
-        const delayInSeconds = Math.floor(
-          (weekDate.getTime() - now.getTime()) / 1000,
-        );
+        // Use unix timestamp for scheduling specific date/time
+        const notBeforeTimestamp = Math.floor(weekDate.getTime() / 1000);
 
-        if (delayInSeconds > 0) {
+        if (weekDate.getTime() > Date.now()) {
           await client.publishJSON({
             url: `${process.env.WEBHOOK_URL}/tournament-reminder`,
             body: {
@@ -152,7 +149,7 @@ export default {
               week: week + 1,
               date: scheduledDate,
             },
-            delay: delayInSeconds,
+            notBefore: notBeforeTimestamp,
           });
         }
       }

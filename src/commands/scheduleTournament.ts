@@ -8,7 +8,9 @@ import {
 } from 'discord.js';
 import { Client } from '@upstash/qstash';
 
-const client = new Client();
+const client = new Client({
+  token: process.env.QSTASH_TOKEN || '',
+});
 
 const maps = [
   { name: 'Ascent', value: 'ascent' },
@@ -113,10 +115,48 @@ export default {
         return;
       }
 
-      // await client.schedules.create({
-      //   destination: 'https://example.com',
-      //   cron: '0 0 * * *',
-      // });
+      // Parse the date and find the Monday of that week
+      const [day, month, year] = dateResponse.split('/').map(Number);
+      const startDate = new Date(year, month - 1, day);
+
+      // Find the Monday of the week containing startDate
+      const dayOfWeek = startDate.getDay();
+      const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Sunday = 0, Monday = 1
+      const firstMonday = new Date(startDate);
+      firstMonday.setDate(startDate.getDate() + mondayOffset);
+
+      // Schedule 7 messages for consecutive Mondays at 9 AM CET
+      for (let week = 0; week < 7; week++) {
+        const weekDate = new Date(firstMonday);
+        weekDate.setDate(firstMonday.getDate() + week * 7);
+
+        // Set time to 9 AM CET (8 AM UTC)
+        weekDate.setHours(8, 0, 0, 0); // 8 AM UTC = 9 AM CET
+
+        // Format date for display
+        const scheduledDate = weekDate.toLocaleDateString('en-GB');
+
+        // Calculate delay in seconds from now
+        const now = new Date();
+        const delayInSeconds = Math.floor(
+          (weekDate.getTime() - now.getTime()) / 1000,
+        );
+
+        if (delayInSeconds > 0) {
+          await client.publishJSON({
+            url: `${process.env.WEBHOOK_URL}/tournament-reminder`,
+            body: {
+              channelId: interaction.channelId,
+              guildId: interaction.guildId,
+              map: selectedMaps[week],
+              week: week + 1,
+              date: scheduledDate,
+            },
+            delay: delayInSeconds,
+          });
+        }
+      }
+
       await i.reply({
         content: `The Tournament has been successfully scheduled.\nStart date: ${dateResponse}\nMaps to be played: ${selectedMaps.map((map) => map.toLocaleUpperCase()).join(', ')}.\nYou'll recieve a message each Monday to schedule the matches.\nGood luck this season!`,
         withResponse: true,

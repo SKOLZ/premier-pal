@@ -125,7 +125,9 @@ export default {
       const firstMonday = new Date(startDate);
       firstMonday.setDate(startDate.getDate() + mondayOffset);
 
-      // Schedule 7 messages for consecutive Mondays at 9 AM CET
+      // Schedule 7 individual schedules for consecutive Mondays at 9 AM CET
+      const scheduleIds: string[] = [];
+
       for (let week = 0; week < 7; week++) {
         const weekDate = new Date(firstMonday);
         weekDate.setDate(firstMonday.getDate() + week * 7);
@@ -136,21 +138,41 @@ export default {
         // Format date for display
         const scheduledDate = weekDate.toLocaleDateString('en-GB');
 
-        // Use unix timestamp for scheduling specific date/time
-        const notBeforeTimestamp = Math.floor(weekDate.getTime() / 1000);
-
         if (weekDate.getTime() > Date.now()) {
-          await client.publishJSON({
-            url: `${process.env.WEBHOOK_URL}/tournament-reminder`,
-            body: {
-              channelId: interaction.channelId,
-              guildId: interaction.guildId,
-              map: selectedMaps[week],
-              week: week + 1,
-              date: scheduledDate,
-            },
-            notBefore: notBeforeTimestamp,
-          });
+          // Create a cron expression for the specific date and time
+          const minute = weekDate.getMinutes();
+          const hour = weekDate.getHours();
+          const dayOfMonth = weekDate.getDate();
+          const month = weekDate.getMonth() + 1; // JavaScript months are 0-indexed
+          const cronExpression = `${minute} ${hour} ${dayOfMonth} ${month} *`;
+
+          // Create a unique schedule ID for this tournament week
+          const scheduleId = `tournament_${interaction.guildId}_${interaction.channelId}_${weekDate.getTime()}`;
+
+          try {
+            const schedule = await client.schedules.create({
+              destination: `${process.env.WEBHOOK_URL}/tournament-reminder`,
+              cron: cronExpression,
+              body: JSON.stringify({
+                channelId: interaction.channelId,
+                guildId: interaction.guildId,
+                map: selectedMaps[week],
+                week: week + 1,
+                date: scheduledDate,
+              }),
+              scheduleId: scheduleId,
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            });
+
+            scheduleIds.push(schedule.scheduleId);
+          } catch (error) {
+            console.error(
+              `Failed to create schedule for week ${week + 1}:`,
+              error,
+            );
+          }
         }
       }
 

@@ -24,6 +24,7 @@ const maps = [
   { name: 'Pearl', value: 'pearl' },
   { name: 'Fracture', value: 'fracture' },
   { name: 'Icebox', value: 'icebox' },
+  { name: 'Lotus', value: 'lotus' },
 ];
 
 const isValidDate = (dateString: string): boolean => {

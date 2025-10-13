@@ -1,5 +1,6 @@
 import express, { type Request, type Response } from 'express';
 import type { Client } from 'discord.js';
+import { Client as UpstashClient } from '@upstash/qstash';
 
 export const startServer = (discordClient: Client) => {
   const app = express();
@@ -59,6 +60,19 @@ export const startServer = (discordClient: Client) => {
       // Send final message tagging the role
       const roleTagMessage = `<@&${roleId}> ☝️ Please share your availability for this week games!`;
       await channel.send(roleTagMessage);
+
+      const client = new UpstashClient({
+        token: process.env.QSTASH_TOKEN || '',
+      });
+
+      // After processing the tournament reminder
+      try {
+        // Extract scheduleId from the request body or reconstruct it
+        const scheduleId = `tournament_${guildId}_${channelId}_${Date.parse(date)}`;
+        await client.schedules.delete(scheduleId);
+      } catch (error) {
+        console.error('Failed to delete schedule:', error);
+      }
 
       res
         .status(200)

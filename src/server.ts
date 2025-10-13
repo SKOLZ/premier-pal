@@ -67,10 +67,16 @@ export const startServer = (discordClient: Client) => {
 
       // After processing the tournament reminder
       try {
-        // Extract scheduleId from the request body or reconstruct it
-        const scheduleId = `tournament_${guildId}_${channelId}_${Date.parse(date)}`;
-        await client.schedules.delete(scheduleId);
-        console.log(`Deleted schedule with ID: ${scheduleId}`);
+        // Extract scheduleId from the Upstash-Schedule-Id header
+        const scheduleId = req.headers['Upstash-Schedule-Id'] as string;
+        if (scheduleId) {
+          await client.schedules.delete(scheduleId);
+          console.log(`Deleted schedule with ID: ${scheduleId}`);
+        } else {
+          console.warn(
+            'No Upstash-Schedule-Id header found, skipping schedule deletion',
+          );
+        }
       } catch (error) {
         console.error('Failed to delete schedule:', error);
       }

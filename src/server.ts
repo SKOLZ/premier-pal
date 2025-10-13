@@ -70,6 +70,7 @@ export const startServer = (discordClient: Client) => {
         // Extract scheduleId from the request body or reconstruct it
         const scheduleId = `tournament_${guildId}_${channelId}_${Date.parse(date)}`;
         await client.schedules.delete(scheduleId);
+        console.log(`Deleted schedule with ID: ${scheduleId}`);
       } catch (error) {
         console.error('Failed to delete schedule:', error);
       }

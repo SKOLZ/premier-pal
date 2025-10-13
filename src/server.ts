@@ -58,8 +58,8 @@ export const startServer = (discordClient: Client) => {
       await channel.send(messageSunday);
 
       // Send final message tagging the role
-      const roleTagMessage = `<@&${roleId}> ☝️ Please share your availability for this week games!`;
-      await channel.send(roleTagMessage);
+      // const roleTagMessage = `<@&${roleId}> ☝️ Please share your availability for this week games!`;
+      // await channel.send(roleTagMessage);
 
       const client = new UpstashClient({
         token: process.env.QSTASH_TOKEN || '',
@@ -73,6 +73,8 @@ export const startServer = (discordClient: Client) => {
           await client.schedules.delete(scheduleId);
           console.log(`Deleted schedule with ID: ${scheduleId}`);
         } else {
+          //log all headers
+          console.log('Request headers:', req.headers);
           console.warn(
             'No Upstash-Schedule-Id header found, skipping schedule deletion',
           );

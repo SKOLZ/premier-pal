@@ -5,6 +5,7 @@ import {
   SlashCommandBuilder,
   StringSelectMenuBuilder,
   StringSelectMenuOptionBuilder,
+  RoleSelectMenuBuilder,
 } from 'discord.js';
 import { Client } from '@upstash/qstash';
 
@@ -116,70 +117,107 @@ export default {
         return;
       }
 
-      // Parse the date and find the Monday of that week
-      const [day, month, year] = dateResponse.split('/').map(Number);
-      const startDate = new Date(year, month - 1, day);
+      // Create role selection menu
+      const roleSelect = new RoleSelectMenuBuilder()
+        .setCustomId('role_selection')
+        .setPlaceholder('Select a role to be tagged for tournament reminders')
+        .setMinValues(1)
+        .setMaxValues(1);
 
-      // Find the Monday of the week containing startDate
-      const dayOfWeek = startDate.getDay();
-      const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Sunday = 0, Monday = 1
-      const firstMonday = new Date(startDate);
-      firstMonday.setDate(startDate.getDate() + mondayOffset);
+      const roleRow =
+        new ActionRowBuilder<RoleSelectMenuBuilder>().addComponents(roleSelect);
 
-      // Schedule 7 individual schedules for consecutive Mondays at 9 AM CET
-      const scheduleIds: string[] = [];
+      const roleResponse = await i.reply({
+        content: `Great! You've selected the maps: ${selectedMaps.map((map) => map.toLocaleUpperCase()).join(', ')}.\n\nNow select a role to be tagged for tournament reminders:`,
+        components: [roleRow],
+        withResponse: true,
+      });
 
-      for (let week = 0; week < 7; week++) {
-        const weekDate = new Date(firstMonday);
-        weekDate.setDate(firstMonday.getDate() + week * 7);
+      const roleCollector =
+        roleResponse.resource?.message?.createMessageComponentCollector({
+          componentType: ComponentType.RoleSelect,
+          time: 300_000,
+        });
 
-        // Set time to 9 AM CET (8 AM UTC)
-        weekDate.setHours(8, 0, 0, 0); // 8 AM UTC = 9 AM CET
+      roleCollector?.on('collect', async (roleInteraction) => {
+        const selectedRole = roleInteraction.values[0];
 
-        // Format date for display
-        const scheduledDate = weekDate.toLocaleDateString('en-GB');
+        // Parse the date and find the Monday of that week
+        const [day, month, year] = dateResponse.split('/').map(Number);
+        const startDate = new Date(year, month - 1, day);
 
-        if (weekDate.getTime() > Date.now()) {
-          // Create a cron expression for the specific date and time
-          const minute = weekDate.getMinutes();
-          const hour = weekDate.getHours();
-          const dayOfMonth = weekDate.getDate();
-          const month = weekDate.getMonth() + 1; // JavaScript months are 0-indexed
-          const cronExpression = `${minute} ${hour} ${dayOfMonth} ${month} *`;
+        // Find the Monday of the week containing startDate
+        const dayOfWeek = startDate.getDay();
+        const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Sunday = 0, Monday = 1
+        const firstMonday = new Date(startDate);
+        firstMonday.setDate(startDate.getDate() + mondayOffset);
 
-          // Create a unique schedule ID for this tournament week
-          const scheduleId = `tournament_${interaction.guildId}_${interaction.channelId}_${weekDate.getTime()}`;
+        // Schedule 7 individual schedules for consecutive Mondays at 9 AM CET
+        const scheduleIds: string[] = [];
 
-          try {
-            const schedule = await client.schedules.create({
-              destination: `${process.env.WEBHOOK_URL}/tournament-reminder`,
-              cron: cronExpression,
-              body: JSON.stringify({
-                channelId: interaction.channelId,
-                guildId: interaction.guildId,
-                map: selectedMaps[week],
-                week: week + 1,
-                date: scheduledDate,
-              }),
-              scheduleId: scheduleId,
-              headers: {
-                'Content-Type': 'application/json',
-              },
-            });
+        for (let week = 0; week < 7; week++) {
+          const weekDate = new Date(firstMonday);
+          weekDate.setDate(firstMonday.getDate() + week * 7);
 
-            scheduleIds.push(schedule.scheduleId);
-          } catch (error) {
-            console.error(
-              `Failed to create schedule for week ${week + 1}:`,
-              error,
-            );
+          // Set time to 9 AM CET (8 AM UTC)
+          weekDate.setHours(8, 0, 0, 0); // 8 AM UTC = 9 AM CET
+
+          // Format date for display
+          const scheduledDate = weekDate.toLocaleDateString('en-GB');
+
+          if (weekDate.getTime() > Date.now()) {
+            // Create a cron expression for the specific date and time
+            const minute = weekDate.getMinutes();
+            const hour = weekDate.getHours();
+            const dayOfMonth = weekDate.getDate();
+            const month = weekDate.getMonth() + 1; // JavaScript months are 0-indexed
+            const cronExpression = `${minute} ${hour} ${dayOfMonth} ${month} *`;
+
+            // Create a unique schedule ID for this tournament week
+            const scheduleId = `tournament_${interaction.guildId}_${interaction.channelId}_${weekDate.getTime()}`;
+
+            try {
+              const schedule = await client.schedules.create({
+                destination: `${process.env.WEBHOOK_URL}/tournament-reminder`,
+                cron: cronExpression,
+                body: JSON.stringify({
+                  channelId: interaction.channelId,
+                  guildId: interaction.guildId,
+                  map: selectedMaps[week],
+                  week: week + 1,
+                  date: scheduledDate,
+                  roleId: selectedRole,
+                }),
+                scheduleId: scheduleId,
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+              });
+
+              scheduleIds.push(schedule.scheduleId);
+            } catch (error) {
+              console.error(
+                `Failed to create schedule for week ${week + 1}:`,
+                error,
+              );
+            }
           }
         }
-      }
 
-      await i.reply({
-        content: `The Tournament has been successfully scheduled.\nStart date: ${dateResponse}\nMaps to be played: ${selectedMaps.map((map) => map.toLocaleUpperCase()).join(', ')}.\nYou'll recieve a message each Monday to schedule the matches.\nGood luck this season!`,
-        withResponse: true,
+        await roleInteraction.reply({
+          content: `✅ The Tournament has been successfully scheduled!\n\n**Details:**\n• Start date: ${dateResponse}\n• Maps to be played: ${selectedMaps.map((map) => map.toLocaleUpperCase()).join(', ')}\n• Role to be tagged: <@&${selectedRole}>\n\nYou'll receive a message each Monday to schedule the matches.\nGood luck this season!`,
+          withResponse: true,
+        });
+      });
+
+      roleCollector?.on('end', (collected) => {
+        if (collected.size === 0) {
+          i.followUp({
+            content:
+              '❌ Error: No role was selected within the time limit (5 minutes). Please run the command again.',
+            ephemeral: true,
+          });
+        }
       });
     });
 

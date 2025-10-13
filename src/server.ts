@@ -67,18 +67,26 @@ export const startServer = (discordClient: Client) => {
 
       // After processing the tournament reminder
       try {
-        // Extract scheduleId from the Upstash-Schedule-Id header
-        const scheduleId = req.headers['upstash-schedule-id'] as string;
-        if (scheduleId) {
-          await client.schedules.delete(scheduleId);
-          console.log(`Deleted schedule with ID: ${scheduleId}`);
-        } else {
-          //log all headers
-          console.log('Request headers:', req.headers);
-          console.warn(
-            'No Upstash-Schedule-Id header found, skipping schedule deletion',
-          );
-        }
+        // Reconstruct scheduleId the same way it's created in scheduleTournament.ts
+        // Parse the date (DD/MM/YYYY format) and calculate the Monday for this week
+        const [day, month, year] = date.split('/').map(Number);
+        const startDate = new Date(year, month - 1, day);
+
+        // Find the Monday of the week containing startDate
+        const dayOfWeek = startDate.getDay();
+        const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+        const monday = new Date(startDate);
+        monday.setDate(startDate.getDate() + mondayOffset);
+
+        // Calculate which week this is (week - 1 because weeks are 1-indexed in the request)
+        const weekOffset = (week - 1) * 7;
+        const weekDate = new Date(monday);
+        weekDate.setDate(monday.getDate() + weekOffset);
+        weekDate.setHours(8, 0, 0, 0); // 8 AM UTC = 9 AM CET
+
+        const scheduleId = `tournament_${guildId}_${channelId}_${weekDate.getTime()}`;
+        await client.schedules.delete(scheduleId);
+        console.log(`Deleted schedule with ID: ${scheduleId}`);
       } catch (error) {
         console.error('Failed to delete schedule:', error);
       }

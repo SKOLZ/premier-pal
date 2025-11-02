@@ -3,7 +3,7 @@ import { ActionRowBuilder, ComponentType, RoleSelectMenuBuilder, SlashCommandBui
 
 export default {
   data: new SlashCommandBuilder()
-    .setName('Role Tagging Test')
+    .setName('role_tagging_test')
     .setDescription('replies tagging the specified role to test if a notification is received!'),
   execute: async (interaction: ChatInputCommandInteraction<CacheType>) => {
     const roleSelect = new RoleSelectMenuBuilder()

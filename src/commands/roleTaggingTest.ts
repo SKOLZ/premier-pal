@@ -14,11 +14,19 @@ export default {
   execute: async (interaction: ChatInputCommandInteraction<CacheType>) => {
     const selectedRole = interaction.options.getRole('role');
     
-    // Wait 2 seconds before replying
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Wait 4 seconds before sending the message
+    await new Promise(resolve => setTimeout(resolve, 4000));
     
-    await interaction.reply({
-      content: `This is a test message tagging the selected role: ${selectedRole}`,
-    });
+    // Send the message with role mention to the channel (this will trigger notifications)
+    if (interaction.channel && 'send' in interaction.channel) {
+      await interaction.channel.send({
+        content: `This is a test message tagging the selected role: ${selectedRole}`,
+      });
+    } else {
+      await interaction.followUp({
+        content: 'Could not send message to this channel.',
+        ephemeral: true,
+      });
+    }
   },
 };

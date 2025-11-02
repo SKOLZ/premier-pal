@@ -13,8 +13,12 @@ export default {
     ),
   execute: async (interaction: ChatInputCommandInteraction<CacheType>) => {
     const selectedRole = interaction.options.getRole('role');
+    
+    // Wait 2 seconds before replying
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
     await interaction.reply({
-      content: `This is a test message tagging the selected role: <@&${selectedRole}>`,
+      content: `This is a test message tagging the selected role: ${selectedRole}`,
     });
   },
 };

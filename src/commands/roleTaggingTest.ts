@@ -29,11 +29,11 @@ export default {
 
     roleCollector?.on('collect', async (roleInteraction) => {
       const selectedRole = roleInteraction.values[0];
-      setTimeout(async () => {
-        await roleInteraction.followUp({
-          content: `This is a test message tagging the selected role: <@&${selectedRole}>`,
-        });
-      }, 2000);
+      await roleInteraction.reply({
+        content: `This is a test message tagging the selected role: <@&${selectedRole}>`,
+      });
+      // setTimeout(async () => {
+      // }, 2000);
     });
   },
 };

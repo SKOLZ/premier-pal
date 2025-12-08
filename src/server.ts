@@ -63,10 +63,10 @@ export const startServer = (discordClient: Client) => {
       } else {
         const roleTagWeekMessage = `<@&${roleId}> ☝️ Please share your availability for this week games!`;
         await channel.send(roleTagWeekMessage);
-        await channel.send("⚠️ PLAYOFFS SUNDAY ⚠️");
-        const messageSunday = `Sunday ${formattedSundayDate} - 19hs`;
+        await channel.send("⚠️ **PLAYOFFS SUNDAY** ⚠️");
+        const messageSunday = `PLAYOFFS Sunday ${formattedSundayDate} - 19hs`;
         await channel.send(messageSunday);
-        const roleTagPlayoffsMessage = `<@&${roleId}> ☝️ Please confirm if you are available to play on playoffs!`;
+        const roleTagPlayoffsMessage = `<@&${roleId}> ☝️ Please confirm if you are available to play on PLAYOFFS!`;
         await channel.send(roleTagPlayoffsMessage);
       }
 

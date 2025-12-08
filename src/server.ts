@@ -54,12 +54,21 @@ export const startServer = (discordClient: Client) => {
         day: '2-digit',
         month: '2-digit',
       });
-      const messageSunday = `Sunday ${formattedSundayDate} - 19hs`;
-      await channel.send(messageSunday);
 
-      // Send final message tagging the role
-      const roleTagMessage = `<@&${roleId}> ☝️ Please share your availability for this week games!`;
-      await channel.send(roleTagMessage);
+      if (week < 7) {
+        const messageSunday = `Sunday ${formattedSundayDate} - 19hs`;
+        await channel.send(messageSunday);
+        const roleTagMessage = `<@&${roleId}> ☝️ Please share your availability for this week games!`;
+        await channel.send(roleTagMessage);
+      } else {
+        const roleTagWeekMessage = `<@&${roleId}> ☝️ Please share your availability for this week games!`;
+        await channel.send(roleTagWeekMessage);
+        await channel.send("⚠️ PLAYOFFS SUNDAY ⚠️");
+        const messageSunday = `Sunday ${formattedSundayDate} - 19hs`;
+        await channel.send(messageSunday);
+        const roleTagPlayoffsMessage = `<@&${roleId}> ☝️ Please confirm if you are available to play on playoffs!`;
+        await channel.send(roleTagPlayoffsMessage);
+      }
 
       const client = new UpstashClient({
         token: process.env.QSTASH_TOKEN || '',

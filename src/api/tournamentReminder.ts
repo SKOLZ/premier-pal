@@ -27,9 +27,9 @@ export const TournamentReminder = (discordClient: Client) => async (req: Request
     // Send tournament schedule messages
     // const messageThursday = formatDayMessage('Thursday', '19hs');
     // await channel.send(messageThursday);
-    const messageSaturday = formatDayMessage('Saturday', '19hs');
+    const messageSaturday = formatDayMessage('Saturday', '19hs', "1st Match");
     await channel.send(messageSaturday);
-    const messageSaturday2 = formatDayMessage('Saturday', '21hs');
+    const messageSaturday2 = formatDayMessage('Saturday', '21hs', "2nd Match");
     await channel.send(messageSaturday2);
     if (week < 7) {
       // const messageSunday = formatDayMessage('Sunday', '19hs');

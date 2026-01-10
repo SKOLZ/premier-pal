@@ -25,15 +25,17 @@ export const TournamentReminder = (discordClient: Client) => async (req: Request
     await channel.send(message);
 
     // Send tournament schedule messages
-    const messageThursday = formatDayMessage('Thursday', '19hs');
-    await channel.send(messageThursday);
-    const messageSaturday = formatDayMessage('Saturday', '20hs');
+    // const messageThursday = formatDayMessage('Thursday', '19hs');
+    // await channel.send(messageThursday);
+    const messageSaturday = formatDayMessage('Saturday', '19hs');
     await channel.send(messageSaturday);
+    const messageSaturday2 = formatDayMessage('Saturday', '21hs');
+    await channel.send(messageSaturday2);
     if (week < 7) {
-      const messageSunday = formatDayMessage('Sunday', '19hs');
-      await channel.send(messageSunday);
-      const roleTagMessage = `<@&${roleId}> ☝️ Please share your availability for this week games!`;
-      await channel.send(roleTagMessage);
+      // const messageSunday = formatDayMessage('Sunday', '19hs');
+      // await channel.send(messageSunday);
+      // const roleTagMessage = `<@&${roleId}> ☝️ Please share your availability for this week games!`;
+      // await channel.send(roleTagMessage);
     } else {
       const roleTagWeekMessage = `<@&${roleId}> ☝️ Please share your availability for this week games!`;
       await channel.send(roleTagWeekMessage);

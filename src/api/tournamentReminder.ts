@@ -3,13 +3,13 @@ import { Client as UpstashClient } from '@upstash/qstash';
 import { formatDayMessage } from '../utils/timeUtils';
 import { Client } from 'discord.js';
 
-const sendElite5Messages = async (channel: any, roleId: string, week: number) => {
-    const messageThursday = formatDayMessage('Thursday', '19hs');
+const sendElite5Messages = async (channel: any, initialDate: string, roleId: string, week: number) => {
+    const messageThursday = formatDayMessage(initialDate, 'Thursday', '19hs');
     await channel.send(messageThursday);
-    const messageSaturday = formatDayMessage('Saturday', '20hs');
+    const messageSaturday = formatDayMessage(initialDate, 'Saturday', '20hs');
     await channel.send(messageSaturday);
     if (week < 7) {
-      const messageSunday = formatDayMessage('Sunday', '19hs');
+      const messageSunday = formatDayMessage(initialDate, 'Sunday', '19hs');
       await channel.send(messageSunday);
       const roleTagMessage = `<@&${roleId}> ☝️ Please share your availability for this week games!`;
       await channel.send(roleTagMessage);
@@ -17,17 +17,17 @@ const sendElite5Messages = async (channel: any, roleId: string, week: number) =>
       const roleTagWeekMessage = `<@&${roleId}> ☝️ Please share your availability for this week games!`;
       await channel.send(roleTagWeekMessage);
       await channel.send("⚠️ **PLAYOFFS SUNDAY** ⚠️");
-      const messageSunday = formatDayMessage('Sunday', '19hs', 'PLAYOFFS');
+      const messageSunday = formatDayMessage(initialDate, 'Sunday', '19hs', 'PLAYOFFS');
       await channel.send(messageSunday);
       const roleTagPlayoffsMessage = `<@&${roleId}> ☝️ Please confirm if you are available to play on PLAYOFFS!`;
       await channel.send(roleTagPlayoffsMessage);
     }
 };
 
-const sendContenderMessages = async (channel: any, roleId: string, week: number) => {
-  const messageSaturday = formatDayMessage('Saturday', '19hs', "1st Match");
+const sendContenderMessages = async (channel: any, initialDate: string, roleId: string, week: number) => {
+  const messageSaturday = formatDayMessage(initialDate, 'Saturday', '19hs', "1st Match");
   await channel.send(messageSaturday);
-  const messageSaturday2 = formatDayMessage('Saturday', '21hs', "2nd Match");
+  const messageSaturday2 = formatDayMessage(initialDate, 'Saturday', '21hs', "2nd Match");
   await channel.send(messageSaturday2);
   if (week < 7) {
     const roleTagMessage = `<@&${roleId}> ☝️ Please share your availability for this week games!`;
@@ -36,7 +36,7 @@ const sendContenderMessages = async (channel: any, roleId: string, week: number)
     const roleTagWeekMessage = `<@&${roleId}> ☝️ Please share your availability for this week games!`;
     await channel.send(roleTagWeekMessage);
     await channel.send("⚠️ **PLAYOFFS SUNDAY** ⚠️");
-    const messageSunday = formatDayMessage('Sunday', '19hs', 'PLAYOFFS');
+    const messageSunday = formatDayMessage(initialDate, 'Sunday', '19hs', 'PLAYOFFS');
     await channel.send(messageSunday);
     const roleTagPlayoffsMessage = `<@&${roleId}> ☝️ Please confirm if you are available to play on PLAYOFFS!`;
     await channel.send(roleTagPlayoffsMessage);
@@ -66,13 +66,13 @@ export const TournamentReminder = (discordClient: Client) => async (req: Request
 
     switch (division) {
       case 'elite5':
-        sendElite5Messages(channel, roleId, week);
+        sendElite5Messages(channel, date, roleId, week);
         break;
       case 'contender':
-        sendContenderMessages(channel, roleId, week);
+        sendContenderMessages(channel, date, roleId, week);
         break;
       default:
-        sendElite5Messages(channel, roleId, week);
+        sendElite5Messages(channel, date, roleId, week);
         break;
     }
 

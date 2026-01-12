@@ -34,8 +34,8 @@ export const TournamentReminder = (discordClient: Client) => async (req: Request
     if (week < 7) {
       // const messageSunday = formatDayMessage('Sunday', '19hs');
       // await channel.send(messageSunday);
-      // const roleTagMessage = `<@&${roleId}> ☝️ Please share your availability for this week games!`;
-      // await channel.send(roleTagMessage);
+      const roleTagMessage = `<@&${roleId}> ☝️ Please share your availability for this week games!`;
+      await channel.send(roleTagMessage);
     } else {
       const roleTagWeekMessage = `<@&${roleId}> ☝️ Please share your availability for this week games!`;
       await channel.send(roleTagWeekMessage);

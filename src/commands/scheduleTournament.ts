@@ -28,6 +28,11 @@ const maps = [
   { name: 'Lotus', value: 'lotus' },
 ];
 
+const divisions = [
+  { name: 'Elite 5', value: 'elite5' },
+  { name: 'Contender', value: 'contender' }
+];
+
 const isValidDate = (dateString: string): boolean => {
   const dateRegex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
   const match = dateString.match(dateRegex);
@@ -73,30 +78,40 @@ export default {
         withResponse: true,
       });
     }
-    const select = new StringSelectMenuBuilder()
+    const divisionSelect = new StringSelectMenuBuilder()
+      .setCustomId('division_selection')
+      .setPlaceholder('Select the division for the tournament')
+      .setMinValues(1)
+      .setMaxValues(1)
+      .addOptions(
+        divisions.map((division) =>
+          new StringSelectMenuOptionBuilder()
+          .setLabel(division.name)
+          .setValue(division.value),
+        )
+      );
+    const mapSelect = new StringSelectMenuBuilder()
       .setCustomId('map_selection')
       .setPlaceholder(
         'Select the 7 maps that will be played in the tournament in calendar order.',
       )
-      .setMinValues(7)
+      .setMinValues(1)
       .setMaxValues(7)
       .addOptions(
         maps.map((map) =>
           new StringSelectMenuOptionBuilder()
             .setLabel(map.name)
-            .setDescription(`Select ${map.name} for the tournament`)
             .setValue(map.value),
         ),
       );
 
-    const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
-      select,
-    );
+    const divisionRow = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(divisionSelect);
+    const mapRow = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(mapSelect);
 
     const response = await interaction.reply({
       content:
-        'Select the 7 maps that will be played in the tournament in calendar order.',
-      components: [row],
+        'Select the division and the 7 maps that will be played in the tournament in calendar order.',
+      components: [divisionRow, mapRow],
       withResponse: true,
     });
 
@@ -106,17 +121,41 @@ export default {
         time: 300_000,
       });
 
-    collector?.on('collect', async (i) => {
-      const selectedMaps = i.values;
+    let selectedMaps: string[] = [];
+    let selectedDivision: string = '';
 
-      if (selectedMaps.length !== 7) {
-        await i.reply({
-          content: `❌ Error: You must select exactly 7 maps for the tournament. You selected ${selectedMaps.length} map(s). Please try again.`,
-          ephemeral: true,
-        });
-        return;
+    collector?.on('collect', async (i) => {
+      if (i.customId === 'division_selection') {
+        console.log('Division selected:', i.values[0]);
+        selectedDivision = i.values[0];
+        if (selectedMaps.length !== 7 || !selectedDivision) {
+          console.log('Waiting for both selections to be completed.');
+          await i.deferUpdate();
+          return;
+        }
+      }
+      if (i.customId === 'map_selection') {
+        console.log('Maps selected:', i.values);
+        if (i.values.length !== 7) {
+          console.log('Incorrect number of maps selected:', i.values.length);
+          await i.reply({
+            content: `❌ Error: You must select exactly 7 maps for the tournament. You selected ${i.values.length} map(s). Please try again.`,
+            ephemeral: true,
+          });
+          return;
+        }
+        selectedMaps = i.values;
+        if (selectedMaps.length !== 7 || !selectedDivision) {
+          console.log('Waiting for both selections to be completed.');
+          await i.deferUpdate();
+          return;
+        }
       }
 
+      // Both selections are complete
+      console.log('Both division and maps have been selected.');
+      const divisionName = divisions.find(d => d.value === selectedDivision)?.name;
+      
       // Create role selection menu
       const roleSelect = new RoleSelectMenuBuilder()
         .setCustomId('role_selection')
@@ -128,7 +167,7 @@ export default {
         new ActionRowBuilder<RoleSelectMenuBuilder>().addComponents(roleSelect);
 
       const roleResponse = await i.reply({
-        content: `Great! You've selected the maps: ${selectedMaps.map((map) => map.toLocaleUpperCase()).join(', ')}.\n\nNow select a role to be tagged for tournament reminders:`,
+        content: `✅ **Selections Complete!**\n\n**Division:** ${divisionName}\n**Maps:** ${selectedMaps.map((map) => map.toLocaleUpperCase()).join(', ')}\n\nNow select a role to be tagged for tournament reminders:`,
         components: [roleRow],
         withResponse: true,
       });
@@ -187,6 +226,7 @@ export default {
                   week: week + 1,
                   date: scheduledDate,
                   roleId: selectedRole,
+                  division: selectedDivision,
                 }),
                 scheduleId: scheduleId,
                 headers: {

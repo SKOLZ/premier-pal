@@ -3,12 +3,12 @@ import { Client as UpstashClient } from '@upstash/qstash';
 import { formatDayMessage } from '../utils/timeUtils';
 import { Client } from 'discord.js';
 
-const sendElite5Messages = async (channel: any, initialDate: string, roleId: string, week: number) => {
+const sendElite5Messages = async (channel: any, initialDate: string, roleId: string, week: number, weekDuration: number) => {
     const messageThursday = formatDayMessage(initialDate, 'Thursday', '19hs');
     await channel.send(messageThursday);
     const messageSaturday = formatDayMessage(initialDate, 'Saturday', '20hs');
     await channel.send(messageSaturday);
-    if (week < 7) {
+    if (week < weekDuration) {
       const messageSunday = formatDayMessage(initialDate, 'Sunday', '19hs');
       await channel.send(messageSunday);
       const roleTagMessage = `<@&${roleId}> ☝️ Please share your availability for this week games!`;
@@ -24,18 +24,18 @@ const sendElite5Messages = async (channel: any, initialDate: string, roleId: str
     }
 };
 
-const sendContenderMessages = async (channel: any, initialDate: string, roleId: string, week: number) => {
-  const messageSaturday = formatDayMessage(initialDate, 'Saturday', '19hs', "1st Match");
-  await channel.send(messageSaturday);
-  const messageSaturday2 = formatDayMessage(initialDate, 'Saturday', '21hs', "2nd Match");
-  await channel.send(messageSaturday2);
-  if (week < 7) {
+const sendContenderMessages = async (channel: any, initialDate: string, roleId: string, week: number, weekDuration: number) => {
+  if (week < weekDuration) {
+    const messageSaturday = formatDayMessage(initialDate, 'Saturday', '19hs', "1st Match");
+    await channel.send(messageSaturday);
+    const messageSaturday2 = formatDayMessage(initialDate, 'Saturday', '21hs', "2nd Match");
+    await channel.send(messageSaturday2);
     const roleTagMessage = `<@&${roleId}> ☝️ Please share your availability for this week games!`;
     await channel.send(roleTagMessage);
   } else {
-    const roleTagWeekMessage = `<@&${roleId}> ☝️ Please share your availability for this week games!`;
-    await channel.send(roleTagWeekMessage);
-    await channel.send("⚠️ **PLAYOFFS SUNDAY** ⚠️");
+    await channel.send("⚠️ **PLAYOFFS** ⚠️");
+    const messageSaturday = formatDayMessage(initialDate, 'Saturday', '19hs', "PLAYOFFS");
+    await channel.send(messageSaturday);
     const messageSunday = formatDayMessage(initialDate, 'Sunday', '19hs', 'PLAYOFFS');
     await channel.send(messageSunday);
     const roleTagPlayoffsMessage = `<@&${roleId}> ☝️ Please confirm if you are available to play on PLAYOFFS!`;
@@ -45,9 +45,9 @@ const sendContenderMessages = async (channel: any, initialDate: string, roleId: 
 
 export const TournamentReminder = (discordClient: Client) => async (req: Request, res: Response) => {
   try {
-    const { channelId, guildId, map, week, date, roleId, division } = req.body;
+    const { channelId, guildId, map, week, date, roleId, division, weekDuration } = req.body;
 
-    if (!channelId || !guildId || !map || !week || !date || !roleId) {
+    if (!channelId || !guildId || !map || !week || !date || !roleId || !weekDuration) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
@@ -66,13 +66,13 @@ export const TournamentReminder = (discordClient: Client) => async (req: Request
 
     switch (division) {
       case 'elite5':
-        sendElite5Messages(channel, date, roleId, week);
+        sendElite5Messages(channel, date, roleId, week, weekDuration);
         break;
       case 'contender':
-        sendContenderMessages(channel, date, roleId, week);
+        sendContenderMessages(channel, date, roleId, week, weekDuration);
         break;
       default:
-        sendElite5Messages(channel, date, roleId, week);
+        sendElite5Messages(channel, date, roleId, week, weekDuration);
         break;
     }
 

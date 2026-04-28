@@ -8,6 +8,7 @@ import {
   RoleSelectMenuBuilder,
 } from 'discord.js';
 import { Client } from '@upstash/qstash';
+import { isValidDate } from '../utils/timeUtils';
 
 const client = new Client({
   token: process.env.QSTASH_TOKEN || '',
@@ -28,36 +29,12 @@ const maps = [
   { name: 'Lotus', value: 'lotus' },
 ];
 
+const weekDurations = [6, 7];
+
 const divisions = [
   { name: 'Elite 5', value: 'elite5' },
   { name: 'Contender', value: 'contender' }
 ];
-
-const isValidDate = (dateString: string): boolean => {
-  const dateRegex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
-  const match = dateString.match(dateRegex);
-
-  if (!match) return false;
-
-  const day = Number.parseInt(match[1], 10);
-  const month = Number.parseInt(match[2], 10);
-  const year = Number.parseInt(match[3], 10);
-
-  if (month < 1 || month > 12) return false;
-  if (day < 1) return false;
-
-  const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-
-  // Check for leap year
-  if (
-    month === 2 &&
-    ((year % 4 === 0 && year % 100 !== 0) || year % 400 === 0)
-  ) {
-    return day <= 29;
-  }
-
-  return day <= daysInMonth[month - 1];
-};
 
 export default {
   data: new SlashCommandBuilder()
@@ -68,9 +45,35 @@ export default {
         .setName('tournament_start_date')
         .setDescription("The tournament's start date in DD/MM/YYYY format")
         .setRequired(true),
+    )
+    .addStringOption((option) =>
+      option
+        .setName('division')
+        .setDescription('Select the division for the tournament')
+        .setRequired(true)
+        .addChoices(
+          ...divisions.map((division) => ({
+            name: division.name,
+            value: division.value,
+          })),
+        ),
+    )
+    .addIntegerOption((option) =>
+      option
+        .setName('week_duration')
+        .setDescription('The number of weeks the tournament will last')
+        .setRequired(true)
+        .addChoices(
+          ...weekDurations.map((duration) => ({
+            name: `${duration} weeks`,
+            value: duration,
+          })),
+        ),
     ),
   execute: async (interaction: ChatInputCommandInteraction<CacheType>) => {
     const dateResponse = interaction.options.getString('tournament_start_date');
+    const selectedDivision = interaction.options.getString('division', true);
+    const weekDuration = interaction.options.getInteger('week_duration', true);
 
     if (!dateResponse || !isValidDate(dateResponse)) {
       return interaction.reply({
@@ -78,25 +81,13 @@ export default {
         withResponse: true,
       });
     }
-    const divisionSelect = new StringSelectMenuBuilder()
-      .setCustomId('division_selection')
-      .setPlaceholder('Select the division for the tournament')
-      .setMinValues(1)
-      .setMaxValues(1)
-      .addOptions(
-        divisions.map((division) =>
-          new StringSelectMenuOptionBuilder()
-          .setLabel(division.name)
-          .setValue(division.value),
-        )
-      );
     const mapSelect = new StringSelectMenuBuilder()
       .setCustomId('map_selection')
       .setPlaceholder(
-        'Select the 7 maps that will be played in the tournament in calendar order.',
+        `Select the ${weekDuration} maps that will be played in the tournament in calendar order. If you are playing in Contender division, the last week is used for playoffs so the map you pick for the last week will be ommited.`,
       )
       .setMinValues(1)
-      .setMaxValues(7)
+      .setMaxValues(weekDuration)
       .addOptions(
         maps.map((map) =>
           new StringSelectMenuOptionBuilder()
@@ -105,13 +96,12 @@ export default {
         ),
       );
 
-    const divisionRow = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(divisionSelect);
     const mapRow = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(mapSelect);
 
     const response = await interaction.reply({
       content:
-        'Select the division and the 7 maps that will be played in the tournament in calendar order.',
-      components: [divisionRow, mapRow],
+        `Select the ${weekDuration} maps that will be played in the tournament in calendar order.`,
+      components: [mapRow],
       withResponse: true,
     });
 
@@ -122,38 +112,23 @@ export default {
       });
 
     let selectedMaps: string[] = [];
-    let selectedDivision: string = '';
 
     collector?.on('collect', async (i) => {
-      if (i.customId === 'division_selection') {
-        console.log('Division selected:', i.values[0]);
-        selectedDivision = i.values[0];
-        if (selectedMaps.length !== 7 || !selectedDivision) {
-          console.log('Waiting for both selections to be completed.');
-          await i.deferUpdate();
-          return;
-        }
-      }
       if (i.customId === 'map_selection') {
         console.log('Maps selected:', i.values);
-        if (i.values.length !== 7) {
+        if (i.values.length !== weekDuration) {
           console.log('Incorrect number of maps selected:', i.values.length);
           await i.reply({
-            content: `❌ Error: You must select exactly 7 maps for the tournament. You selected ${i.values.length} map(s). Please try again.`,
+            content: `❌ Error: You must select exactly ${weekDuration} maps for the tournament. You selected ${i.values.length} map(s). Please try again.`,
             ephemeral: true,
           });
           return;
         }
         selectedMaps = i.values;
-        if (selectedMaps.length !== 7 || !selectedDivision) {
-          console.log('Waiting for both selections to be completed.');
-          await i.deferUpdate();
-          return;
-        }
       }
 
-      // Both selections are complete
-      console.log('Both division and maps have been selected.');
+      // Selections are complete
+      console.log('Maps have been selected.');
       const divisionName = divisions.find(d => d.value === selectedDivision)?.name;
       
       // Create role selection menu
@@ -194,7 +169,7 @@ export default {
         // Schedule 7 individual schedules for consecutive Mondays at 9 AM CET
         const scheduleIds: string[] = [];
 
-        for (let week = 0; week < 7; week++) {
+        for (let week = 0; week < weekDuration; week++) {
           const weekDate = new Date(firstMonday);
           weekDate.setDate(firstMonday.getDate() + week * 7);
 
@@ -227,6 +202,7 @@ export default {
                   date: scheduledDate,
                   roleId: selectedRole,
                   division: selectedDivision,
+                  weekDuration: weekDuration,
                 }),
                 scheduleId: scheduleId,
                 headers: {
@@ -245,7 +221,7 @@ export default {
         }
 
         await roleInteraction.reply({
-          content: `✅ The Tournament has been successfully scheduled!\n\n**Details:**\n• Start date: ${dateResponse}\n• Maps to be played: ${selectedMaps.map((map) => map.toLocaleUpperCase()).join(', ')}\n• Role to be tagged: <@&${selectedRole}>\n\nYou'll receive a message each Monday to schedule the matches.\nGood luck this season!`,
+          content: `✅ The Tournament has been successfully scheduled!\n\n**Details:**\n• Start date: ${dateResponse}\n• Division: ${divisionName}\n• Duration: ${weekDuration} weeks\n• Maps to be played: ${selectedMaps.map((map) => map.toLocaleUpperCase()).join(', ')}\n• Role to be tagged: <@&${selectedRole}>\n\nYou'll receive a message each Monday to schedule the matches.\nGood luck this season!`,
           withResponse: true,
         });
       });

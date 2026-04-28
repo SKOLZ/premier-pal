@@ -93,13 +93,7 @@ export const TournamentReminder = (discordClient: Client) => async (req: Request
       const monday = new Date(startDate);
       monday.setDate(startDate.getDate() + mondayOffset);
 
-      // Calculate which week this is (week - 1 because weeks are 1-indexed in the request)
-      const weekOffset = (week - 1) * 7;
-      const weekDate = new Date(monday);
-      weekDate.setDate(monday.getDate() + weekOffset);
-      weekDate.setHours(8, 0, 0, 0); // 8 AM UTC = 9 AM CET
-
-      const scheduleId = `tournament_${guildId}_${channelId}_${weekDate.getTime()}`;
+      const scheduleId = `tournament_${guildId}_${channelId}_${week}`;
       await client.schedules.delete(scheduleId);
       console.log(`Deleted schedule with ID: ${scheduleId}`);
     } catch (error) {

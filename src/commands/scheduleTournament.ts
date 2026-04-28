@@ -188,7 +188,7 @@ export default {
             const cronExpression = `${minute} ${hour} ${dayOfMonth} ${month} *`;
 
             // Create a unique schedule ID for this tournament week
-            const scheduleId = `tournament_${interaction.guildId}_${interaction.channelId}_${weekDate.getTime()}`;
+            const scheduleId = `tournament_${interaction.guildId}_${interaction.channelId}_${week}`;
 
             try {
               const schedule = await client.schedules.create({

@@ -84,7 +84,7 @@ export default {
     const mapSelect = new StringSelectMenuBuilder()
       .setCustomId('map_selection')
       .setPlaceholder(
-        `Select the ${weekDuration} maps that will be played in the tournament in calendar order. If you are playing in Contender division, the last week is used for playoffs so the map you pick for the last week will be ommited.`,
+        `Select the ${weekDuration} maps that will be played in the tournament in calendar order.`,
       )
       .setMinValues(1)
       .setMaxValues(weekDuration)

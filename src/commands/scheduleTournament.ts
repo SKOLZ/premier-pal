@@ -7,12 +7,8 @@ import {
   StringSelectMenuOptionBuilder,
   RoleSelectMenuBuilder,
 } from 'discord.js';
-import { Client } from '@upstash/qstash';
+import { getQstashClient } from '../lib/qstash';
 import { isValidDate } from '../utils/timeUtils';
-
-const client = new Client({
-  token: process.env.QSTASH_TOKEN || '',
-});
 
 const maps = [
   { name: 'Ascent', value: 'ascent' },
@@ -193,6 +189,7 @@ export default {
             const scheduleId = `tournament_${interaction.guildId}_${interaction.channelId}_${week}`;
 
             try {
+              const client = getQstashClient();
               const schedule = await client.schedules.create({
                 destination: `${process.env.WEBHOOK_URL}/tournament-reminder`,
                 cron: cronExpression,

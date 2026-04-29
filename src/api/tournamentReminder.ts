@@ -1,10 +1,21 @@
-import { type Request, type Response } from 'express';
-import { Client as UpstashClient } from '@upstash/qstash';
+import type { Request, Response } from 'express';
 import { formatDayMessage } from '../utils/timeUtils';
-import { Client } from 'discord.js';
+import type { Client, GuildTextBasedChannel } from 'discord.js';
+import { getQstashClient } from '../lib/qstash';
+
+interface TournamentReminderBody {
+  channelId: string;
+  guildId: string;
+  map: string;
+  week: number;
+  date: string;
+  roleId: string;
+  division: string;
+  weekDuration: number;
+}
 
 const sendElite5Messages = async (
-  channel: any,
+  channel: GuildTextBasedChannel,
   initialDate: string,
   roleId: string,
   week: number,
@@ -36,7 +47,7 @@ const sendElite5Messages = async (
 };
 
 const sendContenderMessages = async (
-  channel: any,
+  channel: GuildTextBasedChannel,
   initialDate: string,
   roleId: string,
   week: number,
@@ -83,6 +94,27 @@ const sendContenderMessages = async (
 export const TournamentReminder =
   (discordClient: Client) => async (req: Request, res: Response) => {
     try {
+      const body = req.body as Partial<TournamentReminderBody>;
+
+      const requiredFields: (keyof TournamentReminderBody)[] = [
+        'channelId',
+        'guildId',
+        'map',
+        'week',
+        'date',
+        'roleId',
+        'weekDuration',
+      ];
+
+      const missingFields = requiredFields.filter((field) => !body[field]);
+
+      if (missingFields.length > 0) {
+        return res.status(400).json({
+          error: 'Missing required fields',
+          missing: missingFields,
+        });
+      }
+
       const {
         channelId,
         guildId,
@@ -92,19 +124,7 @@ export const TournamentReminder =
         roleId,
         division,
         weekDuration,
-      } = req.body;
-
-      if (
-        !channelId ||
-        !guildId ||
-        !map ||
-        !week ||
-        !date ||
-        !roleId ||
-        !weekDuration
-      ) {
-        return res.status(400).json({ error: 'Missing required fields' });
-      }
+      } = body as TournamentReminderBody;
 
       const guild = await discordClient.guilds.fetch(guildId);
       const channel = await guild.channels.fetch(channelId);
@@ -121,19 +141,17 @@ export const TournamentReminder =
 
       switch (division) {
         case 'elite5':
-          sendElite5Messages(channel, date, roleId, week, weekDuration);
+          await sendElite5Messages(channel, date, roleId, week, weekDuration);
           break;
         case 'contender':
-          sendContenderMessages(channel, date, roleId, week, weekDuration);
+          await sendContenderMessages(channel, date, roleId, week, weekDuration);
           break;
         default:
-          sendElite5Messages(channel, date, roleId, week, weekDuration);
+          await sendElite5Messages(channel, date, roleId, week, weekDuration);
           break;
       }
 
-      const client = new UpstashClient({
-        token: process.env.QSTASH_TOKEN || '',
-      });
+      const client = getQstashClient();
 
       // After processing the tournament reminder
       try {

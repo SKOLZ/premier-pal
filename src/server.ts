@@ -1,6 +1,6 @@
-import express, { type Request, type Response } from "express";
-import type { Client } from "discord.js";
-import { TournamentReminder } from "./api/tournamentReminder";
+import express, { type Request, type Response } from 'express';
+import type { Client } from 'discord.js';
+import { TournamentReminder } from './api/tournamentReminder';
 
 export const startServer = (discordClient: Client) => {
   const app = express();
@@ -10,12 +10,12 @@ export const startServer = (discordClient: Client) => {
   app.use(express.json());
 
   // Tournament reminder endpoint
-  app.post("/tournament-reminder", TournamentReminder(discordClient));
+  app.post('/tournament-reminder', TournamentReminder(discordClient));
 
   // Health check endpoint
-  app.get("/health", (req: Request, res: Response) => {
+  app.get('/health', (req: Request, res: Response) => {
     res.json({
-      status: "ok",
+      status: 'ok',
       timestamp: new Date().toISOString(),
       botStatus: discordClient.ws.status,
       botPing: discordClient.ws.ping,
@@ -24,21 +24,21 @@ export const startServer = (discordClient: Client) => {
   });
 
   // Reconnect endpoint
-  app.post("/reconnect", async (req: Request, res: Response) => {
+  app.post('/reconnect', async (req: Request, res: Response) => {
     try {
       console.log(`[${new Date().toISOString()}] Manual reconnect requested`);
       await discordClient.destroy();
       await discordClient.login(process.env.DISCORD_TOKEN);
       res.json({
-        status: "success",
-        message: "Bot reconnected successfully",
+        status: 'success',
+        message: 'Bot reconnected successfully',
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
       console.error(`[${new Date().toISOString()}] Reconnect failed:`, error);
       res.status(500).json({
-        status: "error",
-        message: error instanceof Error ? error.message : "Unknown error",
+        status: 'error',
+        message: error instanceof Error ? error.message : 'Unknown error',
         timestamp: new Date().toISOString(),
       });
     }

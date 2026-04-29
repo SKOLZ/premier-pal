@@ -10,7 +10,10 @@ export const DAY_CONFIG = {
 
 export type DayName = keyof typeof DAY_CONFIG;
 
-const formatDateWithOffset = (initialDate: string, daysOffset: number): string => {
+const formatDateWithOffset = (
+  initialDate: string,
+  daysOffset: number,
+): string => {
   const [day, month, year] = initialDate.split('/').map(Number);
   const startDate = new Date(year, month - 1, day);
   startDate.setDate(startDate.getDate() + daysOffset);
@@ -20,7 +23,12 @@ const formatDateWithOffset = (initialDate: string, daysOffset: number): string =
   });
 };
 
-export const formatDayMessage = (initialDate: string, dayName: DayName, time: string, prefix?: string): string => {
+export const formatDayMessage = (
+  initialDate: string,
+  dayName: DayName,
+  time: string,
+  prefix?: string,
+): string => {
   const daysOffset = DAY_CONFIG[dayName];
   const formattedDate = formatDateWithOffset(initialDate, daysOffset);
   const displayName = prefix ? `${prefix} ${dayName}` : dayName;

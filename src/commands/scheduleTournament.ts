@@ -33,7 +33,7 @@ const weekDurations = [6, 7];
 
 const divisions = [
   { name: 'Elite 5', value: 'elite5' },
-  { name: 'Contender', value: 'contender' }
+  { name: 'Contender', value: 'contender' },
 ];
 
 export default {
@@ -96,11 +96,11 @@ export default {
         ),
       );
 
-    const mapRow = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(mapSelect);
+    const mapRow =
+      new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(mapSelect);
 
     const response = await interaction.reply({
-      content:
-        `Select the ${weekDuration} maps that will be played in the tournament in calendar order.`,
+      content: `Select the ${weekDuration} maps that will be played in the tournament in calendar order.`,
       components: [mapRow],
       withResponse: true,
     });
@@ -129,8 +129,10 @@ export default {
 
       // Selections are complete
       console.log('Maps have been selected.');
-      const divisionName = divisions.find(d => d.value === selectedDivision)?.name;
-      
+      const divisionName = divisions.find(
+        (d) => d.value === selectedDivision,
+      )?.name;
+
       // Create role selection menu
       const roleSelect = new RoleSelectMenuBuilder()
         .setCustomId('role_selection')

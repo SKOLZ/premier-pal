@@ -11,18 +11,19 @@ import { getQstashClient } from '../lib/qstash';
 import { isValidDate } from '../utils/timeUtils';
 
 const maps = [
+  { name: 'Abyss', value: 'abyss' },
   { name: 'Ascent', value: 'ascent' },
   { name: 'Bind', value: 'bind' },
-  { name: 'Haven', value: 'haven' },
-  { name: 'Split', value: 'split' },
   { name: 'Breeze', value: 'breeze' },
-  { name: 'Sunset', value: 'sunset' },
-  { name: 'Abyss', value: 'abyss' },
   { name: 'Corrode', value: 'corrode' },
-  { name: 'Pearl', value: 'pearl' },
   { name: 'Fracture', value: 'fracture' },
+  { name: 'Haven', value: 'haven' },
   { name: 'Icebox', value: 'icebox' },
   { name: 'Lotus', value: 'lotus' },
+  { name: 'Pearl', value: 'pearl' },
+  { name: 'Split', value: 'split' },
+  { name: 'Summit', value: 'summit' },
+  { name: 'Sunset', value: 'sunset' },
 ];
 
 const weekDurations = [6, 7];
